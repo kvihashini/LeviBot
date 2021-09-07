@@ -1,3 +1,5 @@
+import constants as keys;
+from telegram.ext import *
 import random
 import json
 
@@ -25,13 +27,22 @@ model = NeuralNet(input_size, hidden_size, output_size).to(device)
 model.load_state_dict(model_state)
 model.eval()
 
-bot_name = "Sam"
+bot_name = "levi"
 print("Let's chat! (type 'quit' to exit)")
-while True:
-    # sentence = "do you use credit cards?"
-    sentence = input("You: ")
+
+def start_command(update, context):
+    update.message.reply_text("hi there! type anything you like")
+
+
+def help_command(update, context):
+    update.message.reply_text("try typing something else maybe?")
+
+def error(update, context):
+    print(f"Update {update} caused error {context.error}")
+
+def handleInput(sentence):   
     if sentence == "quit":
-        break
+        print(f"{bot_name}: see you!")
 
     sentence = tokenize(sentence)
     X = bag_of_words(sentence, all_words)
@@ -49,5 +60,28 @@ while True:
         for intent in intents['intents']:
             if tag == intent["tag"]:
                 print(f"{bot_name}: {random.choice(intent['responses'])}")
+                return str(random.choice(intent['responses']))
     else:
-        print(f"{bot_name}: I do not understand...")
+        print(f"{bot_name}: i'm sorry could you type something else")
+        return "i'm sorry could you type something else"
+
+def handle_message(update, context):
+    sentence = str(update.message.text).lower();
+    response = handleInput(sentence)
+
+    update.message.reply_text(response)
+
+def main():
+    updater = Updater(keys.API_KEY, use_context=True)
+    dp = updater.dispatcher
+    
+    dp.add_handler(CommandHandler("start", start_command))
+    dp.add_handler(CommandHandler("help", help_command))
+    dp.add_handler(MessageHandler(Filters.text, handle_message))
+    
+    #dp.add_error_handler(error)
+
+    updater.start_polling() # code that starts the bot
+    updater.idle() # to ensure that bot continues to stay active
+
+main()
